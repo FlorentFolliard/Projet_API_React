@@ -5,7 +5,7 @@ export function useFetch<T>(endpoint: string) {
   const [chargement, setChargement] = useState<boolean>(Boolean(endpoint));
   const [erreur, setErreur] = useState<string | null>(null);
 
-  const baseUrl = import.meta.env.VITE_API_URL || "https://api.football-data.org/v4/";
+  const baseUrl = import.meta.env.VITE_API_URL || "/api/";
   const apiKey = import.meta.env.VITE_API_KEY;
 
   useEffect(() => {
