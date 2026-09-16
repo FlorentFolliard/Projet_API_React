@@ -3,9 +3,14 @@ import heroImg from './assets/hero.png'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import './App.css'
+import { useFetch } from './hooks/useFetch'
+import type { Player } from './types.tsx'
 
 function App() {
   const [count, setCount] = useState(0)
+
+  // Exemple avec l'id 2019 (Kylian Mbappé sur football-data.org)
+  const { donnees: player, chargement, erreur } = useFetch<Player>('persons/2019')
 
   return (
     <>
@@ -28,6 +33,54 @@ function App() {
         >
           Count is {count}
         </button>
+      </section>
+
+      <div className="ticks"></div>
+
+      {/* Section d'affichage du joueur selon ton types.ts */}
+      <section style={{ maxWidth: '600px', margin: '2rem auto', padding: '0 1rem', textAlign: 'left' }}>
+        <h2>Fiche Joueur</h2>
+
+        {chargement && <p>⏳ Chargement des informations du joueur...</p>}
+
+        {erreur && (
+          <div style={{ color: '#ef4444', background: '#fee2e2', padding: '1rem', borderRadius: '8px' }}>
+            ❌ Erreur : {erreur}
+          </div>
+        )}
+
+        {!chargement && !erreur && player && (
+          <div
+            style={{
+              border: '1px solid #ccc',
+              borderRadius: '8px',
+              padding: '1.5rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              {player.currentTeam?.crest && (
+                <img
+                  src={player.currentTeam.crest}
+                  alt={player.currentTeam.name}
+                  style={{ width: '45px', height: '45px', objectFit: 'contain' }}
+                />
+              )}
+              <div>
+                <h3 style={{ margin: 0 }}>
+                  {player.name} {player.shirtNumber ? `#${player.shirtNumber}` : ''}
+                </h3>
+                <p style={{ margin: 0, opacity: 0.8, fontSize: '0.9rem' }}>
+                  {player.currentTeam?.name || 'Sans club'}
+                </p>
+              </div>
+            </div>
+
+            <p style={{ margin: '0.4rem 0' }}><strong>Poste :</strong> {player.position || 'Non renseigné'}</p>
+            <p style={{ margin: '0.4rem 0' }}><strong>Nationalité :</strong> {player.nationality}</p>
+            <p style={{ margin: '0.4rem 0' }}><strong>Date de naissance :</strong> {player.dateOfBirth}</p>
+          </div>
+        )}
       </section>
 
       <div className="ticks"></div>
@@ -119,4 +172,4 @@ function App() {
   )
 }
 
-export default App;
+export default App
