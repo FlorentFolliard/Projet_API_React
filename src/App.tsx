@@ -1,121 +1,86 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { useEffect, useState } from 'react'
+import type { Player } from './type'
 import './App.css'
 
+const playerId = 44
+const apiUrl = import.meta.env.VITE_API_URL
+const apiKey = import.meta.env.VITE_API_KEY
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [player, setPlayer] = useState<Player | null>(null)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const loadPlayer = async () => {
+      try {
+        const response = await fetch(`${apiUrl}persons/${playerId}`, {
+          headers: { 'X-Auth-Token': apiKey },
+        })
+
+        if (!response.ok) {
+          throw new Error(`Erreur API : ${response.status}`)
+        }
+
+        setPlayer(await response.json())
+      } catch {
+        setError('Impossible de récupérer les données du joueur.')
+      }
+    }
+
+    loadPlayer()
+  }, [])
+
+  if (error) {
+    return <main className="player-page"><p className="status-message error-message">{error}</p></main>
+  }
+
+  if (!player) {
+    return <main className="player-page"><p className="status-message">Chargement du joueur...</p></main>
+  }
+
+  const birthDate = new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(player.dateOfBirth))
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <main className="player-page">
+      <header className="page-header">
+        <p className="eyebrow">Fiche joueur</p>
+        <h1>{player.name}</h1>
+        <p className="subtitle">Les informations essentielles du joueur</p>
+      </header>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <section className="player-card" aria-label={`Profil de ${player.name}`}>
+        <div className="number-badge" aria-label={`Numéro ${player.shirtNumber}`}>
+          <span>Numéro</span>
+          <strong>{player.shirtNumber}</strong>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+
+        <div className="player-content">
+          <div className="player-intro">
+            <p className="player-position">{player.position}</p>
+            <h2>{player.name}</h2>
+            <p className="player-nationality">{player.nationality}</p>
+          </div>
+
+          <dl className="player-details">
+            <div>
+              <dt>Date de naissance</dt>
+              <dd>{birthDate}</dd>
+            </div>
+            <div>
+              <dt>Équipe actuelle</dt>
+              <dd className="team-name">
+                <img src={player.currentTeam.crest} alt="" />
+                {player.currentTeam.name}
+              </dd>
+            </div>
+          </dl>
         </div>
       </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 
