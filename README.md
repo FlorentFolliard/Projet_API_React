@@ -5,5 +5,5 @@ Groupe :
 - Oscar Vivien
 - Joey Sportes
 - Alexis Tatt
-- Mohammed Traore
+- Mohamed Traore
 - Florent Folliard
