@@ -1,146 +1,145 @@
 import { useState } from "react";
 import { useFetch } from "./hooks/useFetch";
-import type { TeamResponse, PlayerDetail } from "./types";
+import { CLUBS_POPULAIRES } from "./clubs";
+import type { TeamDetailResponse, SquadPlayer } from "./types";
 import "./App.css";
 
-// 86 = Real Madrid (modifiable par 524 pour le PSG, 64 pour Liverpool, etc.)
-const TEAM_ID = 86;
-
 export function App() {
-  const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
+  // Navigation interne sans rechargement de page
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<SquadPlayer | null>(null);
 
-  // 1. Récupération de l'effectif complet du club
+  // Un seul appel par club sélectionné (et mis en cache mémoire grâce au hook useFetch)
   const {
     donnees: teamData,
-    chargement: chargementEquipe,
-    erreur: erreurEquipe,
-  } = useFetch<TeamResponse>(`teams/${TEAM_ID}`);
+    chargement,
+    erreur,
+  } = useFetch<TeamDetailResponse>(selectedTeamId ? `teams/${selectedTeamId}` : "");
 
-  // 2. Récupération des détails du joueur sélectionné
-  const {
-    donnees: playerDetail,
-    chargement: chargementJoueur,
-    erreur: erreurJoueur,
-  } = useFetch<PlayerDetail>(
-    selectedPlayerId ? `persons/${selectedPlayerId}` : ""
-  );
+  function handleSelectClub(id: number) {
+    setSelectedTeamId(id);
+    setSelectedPlayer(null);
+  }
+
+  function handleBackToClubs() {
+    setSelectedTeamId(null);
+    setSelectedPlayer(null);
+  }
 
   return (
     <div className="container">
-      {/* En-tête du club */}
-      <header className="header">
-        {teamData?.crest && (
-          <img
-            src={teamData.crest}
-            alt={teamData.name}
-            className="team-crest"
-          />
-        )}
-        <div>
-          <h1>{teamData?.name || "Effectif de football"}</h1>
-          <p>Sélectionnez un joueur pour afficher sa fiche complète</p>
-        </div>
-      </header>
-
-      {chargementEquipe && <p className="status">⏳ Chargement de l'effectif...</p>}
-      {erreurEquipe && <div className="status error">❌ {erreurEquipe}</div>}
-
-      <div className="layout-content">
-        {/* GRILLE DES JOUEURS */}
-        <section className="grid-section">
-          <h2>Joueurs ({teamData?.squad?.length || 0})</h2>
+      {/* VUE 1 : GRILLE D'ACCUEIL DES CLUBS */}
+      {!selectedTeamId ? (
+        <main>
+          <header className="main-header">
+            <h1>Football Explorer</h1>
+            <p>Sélectionnez un club pour découvrir ses joueurs et son effectif</p>
+          </header>
 
           <div className="grid">
-            {teamData?.squad?.map((player) => {
-              const isSelected = player.id === selectedPlayerId;
-              return (
-                <div
-                  key={player.id}
-                  className={`card ${isSelected ? "selected" : ""}`}
-                  onClick={() => setSelectedPlayerId(player.id)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="card-body">
-                    <h3>{player.name}</h3>
-                    <p className="player-role">
-                      {player.position || "Non défini"}
-                    </p>
-                    <span className="tag-nationality">
-                      🌍 {player.nationality}
-                    </span>
-                  </div>
+            {CLUBS_POPULAIRES.map((club) => (
+              <div
+                key={club.id}
+                className="card club-card"
+                onClick={() => handleSelectClub(club.id)}
+                role="button"
+                tabIndex={0}
+              >
+                <img src={club.crest} alt={club.name} className="club-logo" />
+                <div className="card-body">
+                  <h3>{club.name}</h3>
+                  <span className="tag-nationality">🌍 {club.country}</span>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
-        </section>
+        </main>
+      ) : (
+        /* VUE 2 : EFFECTIF ET JOUEURS DU CLUB */
+        <main>
+          <button type="button" className="btn-back" onClick={handleBackToClubs}>
+            ← Retour à la sélection des clubs
+          </button>
 
-        {/* PANNEAU DE DÉTAIL DU JOUEUR */}
-        <aside className="detail-panel">
-          <h2>Fiche Joueur</h2>
+          {chargement && <p className="status">⏳ Chargement de l'effectif...</p>}
+          {erreur && <div className="status error">❌ {erreur}</div>}
 
-          {!selectedPlayerId && (
-            <div className="placeholder-box">
-              👈 Cliquez sur un joueur dans la grille pour voir ses détails.
-            </div>
-          )}
-
-          {chargementJoueur && <p>⏳ Chargement du profil...</p>}
-          {erreurJoueur && <div className="status error">❌ {erreurJoueur}</div>}
-
-          {!chargementJoueur && playerDetail && (
-            <div className="player-card-detail">
-              <div className="detail-header">
-                {playerDetail.currentTeam?.crest && (
-                  <img
-                    src={playerDetail.currentTeam.crest}
-                    alt={playerDetail.currentTeam.name}
-                    className="detail-crest"
-                  />
-                )}
+          {!chargement && teamData && (
+            <>
+              <header className="header">
+                <img src={teamData.crest} alt={teamData.name} className="team-crest" />
                 <div>
-                  <h3>
-                    {playerDetail.name}{" "}
-                    {playerDetail.shirtNumber
-                      ? `#${playerDetail.shirtNumber}`
-                      : ""}
-                  </h3>
-                  <p className="detail-club">
-                    Club : {playerDetail.currentTeam?.name || "N/A"}
+                  <h1>{teamData.name}</h1>
+                  <p>
+                    {teamData.venue ? `🏟️ Stade : ${teamData.venue} • ` : ""}
+                    Fondé en {teamData.founded || "N/C"}
                   </p>
                 </div>
-              </div>
+              </header>
 
-              <hr />
+              <div className="layout-content">
+                {/* Grille des joueurs du club */}
+                <section className="grid-section">
+                  <h2>Effectif ({teamData.squad?.length || 0} joueurs)</h2>
+                  <div className="grid">
+                    {teamData.squad?.map((player) => {
+                      const isSelected = selectedPlayer?.id === player.id;
+                      return (
+                        <div
+                          key={player.id}
+                          className={`card ${isSelected ? "selected" : ""}`}
+                          onClick={() => setSelectedPlayer(player)}
+                          role="button"
+                          tabIndex={0}
+                        >
+                          <div className="card-body">
+                            <h3>{player.name}</h3>
+                            <p className="player-role">{player.position || "Staff / N/A"}</p>
+                            <span className="tag-nationality">🌍 {player.nationality}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
 
-              <div className="detail-info">
-                <p>
-                  <strong>Poste :</strong> {playerDetail.position || "Inconnu"}
-                </p>
-                <p>
-                  <strong>Nationalité :</strong> {playerDetail.nationality}
-                </p>
-                <p>
-                  <strong>Date de naissance :</strong>{" "}
-                  {playerDetail.dateOfBirth}
-                </p>
-                {playerDetail.section && (
-                  <p>
-                    <strong>Section :</strong> {playerDetail.section}
-                  </p>
-                )}
-                {playerDetail.currentTeam?.venue && (
-                  <p>
-                    <strong>Stade habituel :</strong>{" "}
-                    {playerDetail.currentTeam.venue}
-                  </p>
-                )}
+                {/* Panneau latéral de détails du joueur (instantané et gratuit en requêtes) */}
+                <aside className="detail-panel">
+                  <h2>Fiche Joueur</h2>
+
+                  {!selectedPlayer ? (
+                    <div className="placeholder-box">
+                      👈 Cliquez sur un joueur de la grille pour afficher son profil détaillé.
+                    </div>
+                  ) : (
+                    <div className="player-card-detail">
+                      <div className="detail-header">
+                        <img src={teamData.crest} alt={teamData.name} className="detail-crest" />
+                        <div>
+                          <h3>
+                            {selectedPlayer.name}{" "}
+                            {selectedPlayer.shirtNumber ? `#${selectedPlayer.shirtNumber}` : ""}
+                          </h3>
+                          <p className="detail-club">{teamData.name}</p>
+                        </div>
+                      </div>
+
+                      <hr />
+
+                      <div className="detail-info">
+                        <p><strong>Poste :</strong> {selectedPlayer.position || "Non spécifié"}</p>
+                        <p><strong>Nationalité :</strong> {selectedPlayer.nationality}</p>
+                        <p><strong>Date de naissance :</strong> {selectedPlayer.dateOfBirth || "N/A"}</p>
+                        <p><strong>Identifiant officiel :</strong> #{selectedPlayer.id}</p>
+                      </div>
+                    </div>
+                  )}
+                </aside>
               </div>
-            </div>
+            </>
           )}
-        </aside>
-      </div>
+        </main>
+      )}
     </div>
   );
 }

@@ -1,37 +1,27 @@
-// Joueur tel qu'il apparaît dans l'effectif d'une équipe
-export type SquadPlayer = {
-  id: number;
-  name: string;
-  position: string | null;
-  nationality: string;
-  dateOfBirth?: string;
-};
-
-// Réponse renvoyée par /teams/{id}
-export type TeamResponse = {
+export type ClubItem = {
   id: number;
   name: string;
   shortName: string;
   crest: string;
-  squad: SquadPlayer[];
+  country: string;
 };
 
-// Détail complet renvoyé par /persons/{id}
-export type PlayerDetail = {
+export type SquadPlayer = {
   id: number;
   name: string;
-  firstName?: string;
-  lastName?: string;
-  dateOfBirth: string;
+  position: string | null;
+  dateOfBirth?: string;
   nationality: string;
-  section?: string;
-  position: string;
-  shirtNumber: number | null;
-  currentTeam: {
-    id: number;
-    name: string;
-    crest: string;
-    venue?: string;
-    website?: string;
-  } | null;
+  shirtNumber?: number | null;
+};
+
+export type TeamDetailResponse = {
+  id: number;
+  name: string;
+  shortName: string;
+  crest: string;
+  venue?: string;
+  website?: string;
+  founded?: number;
+  squad: SquadPlayer[];
 };

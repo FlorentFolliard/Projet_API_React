@@ -1,16 +1,26 @@
 import { useState, useEffect } from "react";
 
+// Cache mémoire partagé typé avec unknown pour satisfaire ESLint
+const cacheMemoire = new Map<string, unknown>();
+
 export function useFetch<T>(endpoint: string) {
-  const [donnees, setDonnees] = useState<T | null>(null);
-  const [chargement, setChargement] = useState<boolean>(Boolean(endpoint));
+  // 1. Initialisation directe depuis le cache (sans setState dans l'effet)
+  const [donnees, setDonnees] = useState<T | null>(() => {
+    return endpoint && cacheMemoire.has(endpoint)
+      ? (cacheMemoire.get(endpoint) as T)
+      : null;
+  });
+
+  const [chargement, setChargement] = useState<boolean>(
+    Boolean(endpoint && !cacheMemoire.has(endpoint))
+  );
   const [erreur, setErreur] = useState<string | null>(null);
 
   const baseUrl = import.meta.env.VITE_API_URL || "/api/";
-  const apiKey = import.meta.env.VITE_API_KEY;
 
   useEffect(() => {
-    // Si aucun endpoint n'est fourni, on ne lance rien
-    if (!endpoint) {
+    // Si aucun endpoint ou donnée déjà disponible en cache, on ne déclenche aucun effet
+    if (!endpoint || cacheMemoire.has(endpoint)) {
       return;
     }
 
@@ -22,18 +32,21 @@ export function useFetch<T>(endpoint: string) {
 
       try {
         const url = `${baseUrl}${endpoint}`;
-        const headers: Record<string, string> = {};
-        if (apiKey) {
-          headers["X-Auth-Token"] = apiKey;
-        }
+        const reponse = await fetch(url);
 
-        const reponse = await fetch(url, { headers });
+        if (reponse.status === 429) {
+          throw new Error("Limite de requêtes atteinte (10/min). Réessayez dans 1 minute.");
+        }
 
         if (!reponse.ok) {
           throw new Error(`Erreur API (${reponse.status}) : ${reponse.statusText}`);
         }
 
         const resultat: T = await reponse.json();
+
+        // Sauvegarde dans le cache
+        cacheMemoire.set(endpoint, resultat);
+
         if (!annule) {
           setDonnees(resultat);
         }
@@ -53,9 +66,9 @@ export function useFetch<T>(endpoint: string) {
     return () => {
       annule = true;
     };
-  }, [endpoint, baseUrl, apiKey]);
+  }, [endpoint, baseUrl]);
 
-  // Si aucun endpoint n'est demandé, on expose un état vide sans forcer de setState
+  // Si l'endpoint est vide, on renvoie l'état vide par défaut
   if (!endpoint) {
     return { donnees: null, chargement: false, erreur: null };
   }
