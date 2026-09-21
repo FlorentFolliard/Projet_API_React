@@ -25,3 +25,9 @@ export type TeamDetailResponse = {
   founded?: number;
   squad: SquadPlayer[];
 };
+
+export type GlobalPlayer = SquadPlayer & {
+  teamId: number;
+  teamName: string;
+  teamCrest: string;
+};
