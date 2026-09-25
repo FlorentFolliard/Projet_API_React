@@ -4,32 +4,39 @@ import { useState, useEffect } from "react";
 const cacheMemoire = new Map<string, unknown>();
 
 export function useFetch<T>(endpoint: string) {
-  // 1. Initialisation directe depuis le cache (sans setState dans l'effet)
-  const [donnees, setDonnees] = useState<T | null>(() => {
-    return endpoint && cacheMemoire.has(endpoint)
-      ? (cacheMemoire.get(endpoint) as T)
-      : null;
-  });
+  const [etat, setEtat] = useState<{
+    endpoint: string;
+    donnees: T | null;
+    chargement: boolean;
+    erreur: string | null;
+  }>(() => {
+    const donneesInitiales = endpoint
+      ? (cacheMemoire.get(endpoint) as T | undefined)
+      : undefined;
 
-  const [chargement, setChargement] = useState<boolean>(
-    Boolean(endpoint && !cacheMemoire.has(endpoint))
-  );
-  const [erreur, setErreur] = useState<string | null>(null);
+    return {
+      endpoint,
+      donnees: donneesInitiales ?? null,
+      chargement: Boolean(endpoint && !donneesInitiales),
+      erreur: null,
+    };
+  });
 
   const baseUrl = import.meta.env.VITE_API_URL || "/api/";
 
   useEffect(() => {
-    // Si aucun endpoint ou donnée déjà disponible en cache, on ne déclenche aucun effet
-    if (!endpoint || cacheMemoire.has(endpoint)) {
+    if (!endpoint) {
+      return;
+    }
+
+    const donneesEnCache = cacheMemoire.get(endpoint) as T | undefined;
+    if (donneesEnCache) {
       return;
     }
 
     let annule = false;
 
     async function charger() {
-      setChargement(true);
-      setErreur(null);
-
       try {
         const url = `${baseUrl}${endpoint}`;
         const reponse = await fetch(url);
@@ -48,15 +55,16 @@ export function useFetch<T>(endpoint: string) {
         cacheMemoire.set(endpoint, resultat);
 
         if (!annule) {
-          setDonnees(resultat);
+          setEtat({ endpoint, donnees: resultat, chargement: false, erreur: null });
         }
       } catch (err) {
         if (!annule) {
-          setErreur(err instanceof Error ? err.message : "Erreur inconnue");
-        }
-      } finally {
-        if (!annule) {
-          setChargement(false);
+          setEtat({
+            endpoint,
+            donnees: null,
+            chargement: false,
+            erreur: err instanceof Error ? err.message : "Erreur inconnue",
+          });
         }
       }
     }
@@ -68,10 +76,12 @@ export function useFetch<T>(endpoint: string) {
     };
   }, [endpoint, baseUrl]);
 
-  // Si l'endpoint est vide, on renvoie l'état vide par défaut
-  if (!endpoint) {
-    return { donnees: null, chargement: false, erreur: null };
-  }
+  const donneesEnCache = endpoint ? (cacheMemoire.get(endpoint) as T | undefined) : undefined;
+  const endpointEstActuel = etat.endpoint === endpoint;
 
-  return { donnees, chargement, erreur };
+  return {
+    donnees: donneesEnCache ?? (endpointEstActuel ? etat.donnees : null),
+    chargement: Boolean(endpoint) && !donneesEnCache && (!endpointEstActuel || etat.chargement),
+    erreur: endpointEstActuel ? etat.erreur : null,
+  };
 }

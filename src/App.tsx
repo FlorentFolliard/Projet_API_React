@@ -4,6 +4,16 @@ import { CLUBS_POPULAIRES } from "./clubs";
 import type { TeamDetailResponse, SquadPlayer } from "./types";
 import "./App.css";
 
+function getPlayerInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
 export function App() {
   // Navigation interne sans rechargement de page
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
@@ -64,7 +74,7 @@ export function App() {
           {chargement && <p className="status">⏳ Chargement de l'effectif...</p>}
           {erreur && <div className="status error">❌ {erreur}</div>}
 
-          {!chargement && teamData && (
+          {!chargement && teamData && teamData.id === selectedTeamId && (
             <>
               <header className="header">
                 <img src={teamData.crest} alt={teamData.name} className="team-crest" />
@@ -85,19 +95,25 @@ export function App() {
                     {teamData.squad?.map((player) => {
                       const isSelected = selectedPlayer?.id === player.id;
                       return (
-                        <div
+                        <article
                           key={player.id}
-                          className={`card ${isSelected ? "selected" : ""}`}
+                          className={`card player-card ${isSelected ? "selected" : ""}`}
                           onClick={() => setSelectedPlayer(player)}
                           role="button"
                           tabIndex={0}
                         >
-                          <div className="card-body">
-                            <h3>{player.name}</h3>
-                            <p className="player-role">{player.position || "Staff / N/A"}</p>
-                            <span className="tag-nationality">🌍 {player.nationality}</span>
+                          <div className="player-card-visual">
+                            <img src={teamData.crest} alt="" className="player-card-crest" />
+                            <span className="player-initials">{getPlayerInitials(player.name)}</span>
+                            <span className="player-number">{player.shirtNumber || "-"}</span>
                           </div>
-                        </div>
+                          <div className="card-body">
+                            <p className="player-card-label">Joueur</p>
+                            <h3 title={player.name}>{player.name}</h3>
+                            <p className="player-role">{player.position || "Staff / N/A"}</p>
+                            <span className="tag-nationality">{player.nationality}</span>
+                          </div>
+                        </article>
                       );
                     })}
                   </div>
