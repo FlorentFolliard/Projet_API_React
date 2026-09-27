@@ -2,6 +2,9 @@
 
 Application React + TypeScript pour explorer des clubs et joueurs de football, filtrer les informations, consulter les détails d’un club et gérer une fiche joueur avec validation côté client.
 
+Projet réalisé par :
+Florent Folliard, Joey Sportes, Mohamed Traore, Oscar Vivien
+
 ## Fonctionnalités
 - Liste de clubs populaires
 - Recherche multicritère
@@ -32,15 +35,13 @@ npm test
 ```
 
 ## Répartition du travail
-- Front / routing / navigation : [src/App.tsx](src/App.tsx), [src/components/Layout.tsx](src/components/Layout.tsx)
-- Contexte global et useReducer : [src/context/AppContext.tsx](src/context/AppContext.tsx)
-- Hooks API et gestion des états : [src/hooks/useFetch.ts](src/hooks/useFetch.ts)
-- Recherche et composants UI : [src/components/SearchBar.tsx](src/components/SearchBar.tsx), [src/components/ClubCard.tsx](src/components/ClubCard.tsx), [src/components/SectionCard.tsx](src/components/SectionCard.tsx)
-- Formulaire et validation : [src/components/PlayerForm.tsx](src/components/PlayerForm.tsx)
-- Tests : [src/App.test.tsx](src/App.test.tsx)
+| Membre | Rôle principal | Fichiers & Livrables clés | Compétences démontrées |
+| :--- | :--- | :--- | :--- |
+| **Oscar** | Architecture TypeScript & État Global | `types.ts`, `AppContext.tsx`, `utils.ts`, `useLocalStorage.ts` | Génériques, `useReducer`, typage strict sans `any`, immuabilité. |
+| **Florent** | API, Asynchrone & Déploiement | `useFetch.ts`, `api/football.ts`, `vercel.json`, `vite.config.ts` | `AbortController`, 3 états asynchrones, déploiement HTTPS, Serverless/Proxy. |
+| **Mohamed** | UI, Layout & React Router v6 | `App.tsx`, `Layout.tsx`, `HomePage.tsx`, `Card.tsx`, `Grid.tsx` | Routes v6, `<Outlet/>`, composants réutilisables avec `children`, navigation programmatique. |
+| **Joey** | Formulaire, Détails & Tests Unitaires | `PlayerForm.tsx`, `ClubPage.tsx`, `ClubMatches.tsx`, `app.test.tsx` | Formulaire contrôlé, route à paramètre, tests Vitest & cas conditionnels. |
 
 ## Déploiement
-Renseigner l’adresse HTTPS publique du projet lors du déploiement final.
+[URL publique déployée grâce à Vercel](https://projet-api-react.vercel.app/)
 
-## Remarques
-Le projet est prêt pour la démonstration locale et la soutenance technique. La version de production doit être déployée sur une URL publique pour la présentation finale en ligne.
