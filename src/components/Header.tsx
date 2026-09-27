@@ -14,10 +14,12 @@ export const Header: React.FC = () => {
         <NavLink to="/" className={({ isActive }) => (isActive ? 'active' : '')}>
           Clubs & Effectifs
         </NavLink>
+        <NavLink to="/favoris" className={({ isActive }) => (isActive ? 'active' : '')}>
+          ★ Favoris ({state.clubFavorisIds.length})
+        </NavLink>
         <NavLink to="/ajouter-joueur" className={({ isActive }) => (isActive ? 'active' : '')}>
           + Ajouter un joueur
         </NavLink>
-        <span className="fav-count">★ Favoris : {state.favorisIds.length}</span>
       </nav>
     </header>
   );

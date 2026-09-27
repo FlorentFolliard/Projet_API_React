@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { HomePage } from './pages/HomePage';
 import { ClubPage } from './pages/ClubPage';
+import { FavoritesPage } from './pages/FavoritesPage';
 import { AddPlayerPage } from './pages/AddPlayerPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import './App.css';
@@ -11,6 +12,7 @@ export function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/favoris" element={<FavoritesPage />} />
         <Route path="/club/:clubId" element={<ClubPage />} />
         <Route path="/ajouter-joueur" element={<AddPlayerPage />} />
         <Route path="/404" element={<NotFoundPage />} />

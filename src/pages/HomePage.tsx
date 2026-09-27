@@ -47,14 +47,30 @@ export const HomePage: React.FC = () => {
       <section className="clubs-section">
         <h2>Clubs disponibles ({clubsFiltres.length})</h2>
         <Grid>
-          {clubsFiltres.map((club) => (
-            <Card key={club.id} onClick={() => navigate(`/club/${club.id}`)}>
-              <img src={club.crest} alt={club.name} className="crest-medium" />
-              <h3>{club.name}</h3>
-              <p className="sub-text">🌍 {club.country}</p>
-              <button className="btn-details">Voir l'effectif →</button>
-            </Card>
-          ))}
+          {clubsFiltres.map((club) => {
+            const isClubFav = state.clubFavorisIds.includes(club.id);
+            return (
+              <Card key={club.id} onClick={() => navigate(`/club/${club.id}`)}>
+                <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className={`btn-star ${isClubFav ? 'active' : ''}`}
+                    title={isClubFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      dispatch({ type: 'TOGGLE_CLUB_FAVORI', payload: club.id });
+                    }}
+                  >
+                    {isClubFav ? '★' : '☆'}
+                  </button>
+                </div>
+                <img src={club.crest} alt={club.name} className="crest-medium" />
+                <h3>{club.name}</h3>
+                <p className="sub-text">🌍 {club.country}</p>
+                <button className="btn-details">Voir l'effectif →</button>
+              </Card>
+            );
+          })}
         </Grid>
       </section>
 
