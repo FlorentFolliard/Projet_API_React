@@ -26,6 +26,20 @@ export type TeamDetailResponse = {
   squad: SquadPlayer[];
 };
 
+export type TeamMatch = {
+  id: number;
+  utcDate: string;
+  status: string;
+  competition: { name: string };
+  homeTeam: { id: number; name: string; shortName?: string };
+  awayTeam: { id: number; name: string; shortName?: string };
+  score: { fullTime: { home: number | null; away: number | null } };
+};
+
+export type TeamMatchesResponse = {
+  matches: TeamMatch[];
+};
+
 export type GlobalPlayer = SquadPlayer & {
   teamId: number;
   teamName: string;

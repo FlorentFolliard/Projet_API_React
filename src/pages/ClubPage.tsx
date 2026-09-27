@@ -5,7 +5,7 @@ import { PlayerForm } from "../components/PlayerForm";
 import { SectionCard } from "../components/SectionCard";
 import { useAppState } from "../context/AppContext";
 import { useFetch } from "../hooks/useFetch";
-import type { TeamDetailResponse } from "../types";
+import type { TeamDetailResponse, TeamMatchesResponse } from "../types";
 import { normaliserTexte } from "../utils";
 
 const PLAYERS = [
@@ -21,6 +21,11 @@ export function ClubPage() {
   const { state } = useAppState();
   const [players, setPlayers] = useState(PLAYERS);
   const { donnees, chargement, erreur } = useFetch<TeamDetailResponse>(clubId ? `teams/${clubId}` : "");
+  const {
+    donnees: donneesMatchs,
+    chargement: chargementMatchs,
+    erreur: erreurMatchs,
+  } = useFetch<TeamMatchesResponse>(clubId ? `teams/${clubId}/matches?status=FINISHED&limit=5` : "");
 
   const currentClub = CLUBS_POPULAIRES.find((club) => String(club.id) === clubId);
 
@@ -36,6 +41,10 @@ export function ClubPage() {
       normaliserTexte(player.name).includes(query) || normaliserTexte(player.position ?? "").includes(query)
     );
   }, [clubId, donnees, players, state.query]);
+
+  const derniersMatchs = (donneesMatchs?.matches ?? [])
+    .slice()
+    .sort((a, b) => new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime());
 
   if (!currentClub) {
     return <div className="placeholder-box">Club introuvable.</div>;
@@ -75,6 +84,56 @@ export function ClubPage() {
               </article>
             ))}
           </div>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Historique des matchs" subtitle="5 derniers matchs terminés">
+        {chargementMatchs && <p className="helper-text">Chargement des résultats…</p>}
+        {erreurMatchs && <p className="helper-text error-text">L’historique des matchs est indisponible pour le moment.</p>}
+        {!chargementMatchs && !erreurMatchs && derniersMatchs.length === 0 && (
+          <p className="helper-text">Aucun match terminé disponible pour cette équipe.</p>
+        )}
+        {!chargementMatchs && !erreurMatchs && derniersMatchs.length > 0 && (
+          <ol className="match-list">
+            {derniersMatchs.map((match) => {
+              const scoreDomicile = match.score.fullTime.home;
+              const scoreExterieur = match.score.fullTime.away;
+              const resultat = scoreDomicile === null || scoreExterieur === null
+                ? "inconnu"
+                : scoreDomicile === scoreExterieur
+                  ? "nul"
+                  : (scoreDomicile > scoreExterieur) === (match.homeTeam.id === Number(clubId))
+                    ? "victoire"
+                    : "défaite";
+              const nomDomicile = match.homeTeam.shortName ?? match.homeTeam.name;
+              const nomExterieur = match.awayTeam.shortName ?? match.awayTeam.name;
+
+              return (
+                <li key={match.id} className={`match-row match-row--${resultat}`}>
+                  <div className="match-meta">
+                    <time dateTime={match.utcDate}>
+                      {new Intl.DateTimeFormat("fr-FR", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      }).format(new Date(match.utcDate))}
+                    </time>
+                    <span>{match.competition.name}</span>
+                  </div>
+                  <div className="match-scoreline">
+                    <span className="match-team-name">{nomDomicile}</span>
+                    <strong className="match-score">
+                      {scoreDomicile ?? "–"} - {scoreExterieur ?? "–"}
+                    </strong>
+                    <span className="match-team-name">{nomExterieur}</span>
+                  </div>
+                  <span className="match-result">
+                    {resultat === "inconnu" ? "Terminé" : resultat}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
         )}
       </SectionCard>
 

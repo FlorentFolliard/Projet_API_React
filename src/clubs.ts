@@ -21,8 +21,8 @@ export const CLUBS_POPULAIRES: ClubItem[] = [
   { id: 78, name: "Club Atlético de Madrid", shortName: "Atleti", crest: "https://crests.football-data.org/78.png", country: "Espagne" },
   { id: 90, name: "Stuttgart", shortName: "Stuttgart", crest: "https://crests.football-data.org/90.png", country: "Allemagne" },
   { id: 523, name: "Olympiacos CFP", shortName: "Olympiacos", crest: "https://crests.football-data.org/523.png", country: "Grèce" },
-  { id: 173, name: "FC Porto", shortName: "Porto", crest: "https://crests.football-data.org/173.png", country: "Portugal" },
-  { id: 500, name: "Bologna FC 1909", shortName: "Bologna", crest: "https://crests.football-data.org/500.png", country: "Italie" },
+  { id: 173, name: "FC Porto", shortName: "Porto", crest: "https://crests.football-data.org/503.png", country: "Portugal" },
+  { id: 500, name: "Bologna FC 1909", shortName: "Bologna", crest: "https://media.api-sports.io/football/teams/500.png", country: "Italie" },
   { id: 114, name: "Napoli", shortName: "Napoli", crest: "https://crests.football-data.org/114.png", country: "Italie" },
   { id: 563, name: "PSV Eindhoven", shortName: "PSV", crest: "https://crests.football-data.org/563.png", country: "Pays-Bas" },
 ];

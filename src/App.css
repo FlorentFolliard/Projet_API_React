@@ -144,6 +144,17 @@
   margin-bottom: 0.8rem;
 }
 
+.club-logo-fallback {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  border-radius: 50%;
+  background: rgba(14, 116, 144, 0.2);
+  color: #cffafe;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
 .card-body h3 {
   margin: 0 0 0.4rem 0;
   font-size: 1rem;
@@ -480,6 +491,78 @@
   margin: 0.25rem 0 1rem;
 }
 
+.match-list {
+  display: grid;
+  gap: 0.65rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.match-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(240px, 2fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-left: 3px solid #64748b;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.match-row--victoire {
+  border-left-color: #34d399;
+}
+
+.match-row--nul {
+  border-left-color: #fbbf24;
+}
+
+.match-row--défaite {
+  border-left-color: #fb7185;
+}
+
+.match-meta {
+  display: grid;
+  gap: 0.2rem;
+  color: #94a3b8;
+  font-size: 0.78rem;
+}
+
+.match-meta time {
+  color: #e2e8f0;
+}
+
+.match-scoreline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.match-team-name {
+  overflow: hidden;
+  color: #e2e8f0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-score {
+  min-width: 4.5rem;
+  color: #f8fafc;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-result {
+  min-width: 4.5rem;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  text-align: right;
+  text-transform: capitalize;
+}
+
 .favorite-button {
   position: absolute;
   top: 12px;
@@ -517,4 +600,26 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .match-row {
+    grid-template-columns: 1fr auto;
+    gap: 0.55rem 0.75rem;
+  }
+
+  .match-meta {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .match-scoreline {
+    gap: 0.4rem;
+  }
+
+  .match-result {
+    min-width: auto;
+  }
 }
