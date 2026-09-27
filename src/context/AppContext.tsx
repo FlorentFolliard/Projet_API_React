@@ -1,62 +1,77 @@
-import { createContext, useContext, useMemo, useReducer, type ReactNode } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import type { Player, ClubItem } from '../types';
+import { CLUBS_POPULAIRES } from '../clubs';
+import initialPlayers from '../data/joueurs.json';
 
-export type AppState = {
-  query: string;
-  favorites: number[];
+type State = {
+  clubs: ClubItem[];
+  players: Player[];
+  favorisIds: number[];
+  recherche: string;
 };
 
-export type AppAction =
-  | { type: "SET_QUERY"; payload: string }
-  | { type: "TOGGLE_FAVORITE"; payload: number };
+type Action =
+  | { type: 'ADD_PLAYER'; payload: Player }
+  | { type: 'TOGGLE_FAVORI'; payload: number }
+  | { type: 'SET_RECHERCHE'; payload: string }
+  | { type: 'SET_PLAYERS'; payload: Player[] };
 
-const initialState: AppState = {
-  query: "",
-  favorites: [],
-};
-
-function appReducer(state: AppState, action: AppAction): AppState {
+function appReducer(state: State, action: Action): State {
   switch (action.type) {
-    case "SET_QUERY":
-      return { ...state, query: action.payload };
-    case "TOGGLE_FAVORITE": {
-      const alreadyLiked = state.favorites.includes(action.payload);
+    case 'ADD_PLAYER':
       return {
         ...state,
-        favorites: alreadyLiked
-          ? state.favorites.filter((id) => id !== action.payload)
-          : [...state.favorites, action.payload],
+        players: [action.payload, ...state.players],
+      };
+    case 'TOGGLE_FAVORI': {
+      const exists = state.favorisIds.includes(action.payload);
+      return {
+        ...state,
+        favorisIds: exists
+          ? state.favorisIds.filter((id) => id !== action.payload)
+          : [...state.favorisIds, action.payload],
       };
     }
+    case 'SET_RECHERCHE':
+      return { ...state, recherche: action.payload };
+    case 'SET_PLAYERS':
+      return { ...state, players: action.payload };
     default:
       return state;
   }
 }
 
-type AppContextValue = {
-  state: AppState;
-  setQuery: (value: string) => void;
-  toggleFavorite: (clubId: number) => void;
+type AppContextType = {
+  state: State;
+  dispatch: React.Dispatch<Action>;
 };
 
-const AppContext = createContext<AppContextValue | undefined>(undefined);
+const AppContext = createContext<AppContextType | null>(null);
 
-export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(appReducer, initialState);
+export function AppProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(appReducer, {
+    clubs: CLUBS_POPULAIRES,
+    players: (initialPlayers as Player[]) || [],
+    favorisIds: JSON.parse(localStorage.getItem('football_favoris') || '[]'),
+    recherche: '',
+  });
 
-  const value = useMemo<AppContextValue>(() => ({
-    state,
-    setQuery: (value: string) => dispatch({ type: "SET_QUERY", payload: value }),
-    toggleFavorite: (clubId: number) => dispatch({ type: "TOGGLE_FAVORITE", payload: clubId }),
-  }), [state]);
+  useEffect(() => {
+    localStorage.setItem('football_favoris', JSON.stringify(state.favorisIds));
+  }, [state.favorisIds]);
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={{ state, dispatch }}>
+      {children}
+    </AppContext.Provider>
+  );
 }
 
-export function useAppState() {
+export function useApp(): AppContextType {
   const context = useContext(AppContext);
   if (!context) {
-    throw new Error("useAppState doit être utilisé à l'intérieur de AppProvider");
+    throw new Error('useApp doit être utilisé dans AppProvider');
   }
-
   return context;
 }

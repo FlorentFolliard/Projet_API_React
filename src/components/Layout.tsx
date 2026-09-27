@@ -1,14 +1,17 @@
+import React from 'react';
 import { Outlet } from 'react-router-dom';
+import { Header } from './Header';
 
-export function Layout() {
+export const Layout: React.FC = () => {
   return (
-    <div className="app-shell">
-      <header className="main-header">
-        <h1>Football Explorer</h1>
-      </header>
-      <main>
+    <div className="app-layout">
+      <Header />
+      <main className="main-content">
         <Outlet />
       </main>
+      <footer className="app-footer">
+        <p>Projet React & TypeScript — Bachelor 2 • Soutenance Ycode</p>
+      </footer>
     </div>
   );
-}
+};

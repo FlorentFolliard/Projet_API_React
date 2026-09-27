@@ -1,87 +1,45 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
+import type { AsyncState } from '../types';
 
-// Cache mémoire partagé typé avec unknown pour satisfaire ESLint
-const cacheMemoire = new Map<string, unknown>();
-
-export function useFetch<T>(endpoint: string) {
-  const [etat, setEtat] = useState<{
-    endpoint: string;
-    donnees: T | null;
-    chargement: boolean;
-    erreur: string | null;
-  }>(() => {
-    const donneesInitiales = endpoint
-      ? (cacheMemoire.get(endpoint) as T | undefined)
-      : undefined;
-
-    return {
-      endpoint,
-      donnees: donneesInitiales ?? null,
-      chargement: Boolean(endpoint && !donneesInitiales),
-      erreur: null,
-    };
+export function useFetch<T>(url: string): AsyncState<T> {
+  const [state, setState] = useState<AsyncState<T>>({
+    status: url ? 'loading' : 'idle',
+    data: null,
+    error: null,
   });
 
-  const baseUrl = import.meta.env.VITE_API_URL || "/api/";
-
   useEffect(() => {
-    if (!endpoint) {
+    if (!url) {
       return;
     }
 
-    const donneesEnCache = cacheMemoire.get(endpoint) as T | undefined;
-    if (donneesEnCache) {
-      return;
-    }
+    const controller = new AbortController();
 
-    let annule = false;
-
-    async function charger() {
+    async function fetchData() {
       try {
-        const url = `${baseUrl}${endpoint}`;
-        const reponse = await fetch(url);
-
-        if (reponse.status === 429) {
-          throw new Error("Limite de requêtes atteinte (10/min). Réessayez dans 1 minute.");
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`Erreur réseau (${response.status}) : ${response.statusText}`);
         }
-
-        if (!reponse.ok) {
-          throw new Error(`Erreur API (${reponse.status}) : ${reponse.statusText}`);
-        }
-
-        const resultat: T = await reponse.json();
-
-        // Sauvegarde dans le cache
-        cacheMemoire.set(endpoint, resultat);
-
-        if (!annule) {
-          setEtat({ endpoint, donnees: resultat, chargement: false, erreur: null });
-        }
+        const data: T = await response.json();
+        setState({ status: 'success', data, error: null });
       } catch (err) {
-        if (!annule) {
-          setEtat({
-            endpoint,
-            donnees: null,
-            chargement: false,
-            erreur: err instanceof Error ? err.message : "Erreur inconnue",
-          });
+        if (err instanceof Error && err.name !== 'AbortError') {
+          setState({ status: 'error', data: null, error: err.message });
         }
       }
     }
 
-    charger();
+    fetchData();
 
     return () => {
-      annule = true;
+      controller.abort();
     };
-  }, [endpoint, baseUrl]);
+  }, [url]);
 
-  const donneesEnCache = endpoint ? (cacheMemoire.get(endpoint) as T | undefined) : undefined;
-  const endpointEstActuel = etat.endpoint === endpoint;
+  if (!url) {
+    return { status: 'idle', data: null, error: null };
+  }
 
-  return {
-    donnees: donneesEnCache ?? (endpointEstActuel ? etat.donnees : null),
-    chargement: Boolean(endpoint) && !donneesEnCache && (!endpointEstActuel || etat.chargement),
-    erreur: endpointEstActuel ? etat.erreur : null,
-  };
+  return state;
 }

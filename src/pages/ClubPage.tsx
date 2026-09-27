@@ -1,145 +1,92 @@
-import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { CLUBS_POPULAIRES } from "../clubs";
-import { PlayerForm } from "../components/PlayerForm";
-import { SectionCard } from "../components/SectionCard";
-import { useAppState } from "../context/AppContext";
-import { useFetch } from "../hooks/useFetch";
-import type { TeamDetailResponse, TeamMatchesResponse } from "../types";
-import { normaliserTexte } from "../utils";
+import React, { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
+import { useFetch } from '../hooks/useFetch';
+import { Card } from '../components/Card';
+import { Grid } from '../components/Grid';
+import { TeamStats } from '../components/TeamStats';
+import { ClubMatches } from '../components/ClubMatches';
+import { PlayerModal } from '../components/PlayerModel';
+import type { Player } from '../types';
 
-const PLAYERS = [
-  { id: 1, name: "Kylian Mbappé", position: "Attaquant", teamId: 86 },
-  { id: 2, name: "Vinicius Jr", position: "Ailier", teamId: 86 },
-  { id: 3, name: "Jules Koundé", position: "Défenseur", teamId: 81 },
-  { id: 4, name: "Ousmane Dembélé", position: "Ailier", teamId: 81 },
-  { id: 5, name: "Achraf Hakimi", position: "Défenseur", teamId: 524 },
-];
+export const ClubPage: React.FC = () => {
+  const { clubId } = useParams<{ clubId: string }>();
+  const navigate = useNavigate();
+  const { state } = useApp();
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
-export function ClubPage() {
-  const { clubId } = useParams();
-  const { state } = useAppState();
-  const [players, setPlayers] = useState(PLAYERS);
-  const { donnees, chargement, erreur } = useFetch<TeamDetailResponse>(clubId ? `teams/${clubId}` : "");
-  const {
-    donnees: donneesMatchs,
-    chargement: chargementMatchs,
-    erreur: erreurMatchs,
-  } = useFetch<TeamMatchesResponse>(clubId ? `teams/${clubId}/matches?status=FINISHED&limit=5` : "");
+  const club = state.clubs.find((c) => c.id === Number(clubId));
 
-  const currentClub = CLUBS_POPULAIRES.find((club) => String(club.id) === clubId);
+  // Appel API conforme traitant loading, error, success avec signal d'abandon[cite: 6]
+  const apiState = useFetch<{ name: string; venue?: string }>(
+    club ? `/api/teams/${club.id}` : ''
+  );
 
-  const filteredPlayers = useMemo(() => {
-    const query = normaliserTexte(state.query);
-    const clubPlayers = (donnees?.squad ?? players).filter((player) =>
-      player.teamId === Number(clubId) || !("teamId" in player) || true
+  if (!club) {
+    return (
+      <div className="not-found-box">
+        <h2>Club introuvable</h2>
+        <button onClick={() => navigate('/')}>← Revenir à l'accueil</button>
+      </div>
     );
-
-    if (!query) return clubPlayers;
-
-    return clubPlayers.filter((player) =>
-      normaliserTexte(player.name).includes(query) || normaliserTexte(player.position ?? "").includes(query)
-    );
-  }, [clubId, donnees, players, state.query]);
-
-  const derniersMatchs = (donneesMatchs?.matches ?? [])
-    .slice()
-    .sort((a, b) => new Date(b.utcDate).getTime() - new Date(a.utcDate).getTime());
-
-  if (!currentClub) {
-    return <div className="placeholder-box">Club introuvable.</div>;
   }
 
-  function handleAddPlayer(player: { name: string; position: string }) {
-    setPlayers((current) => [
-      ...current,
-      {
-        id: Date.now(),
-        name: player.name,
-        position: player.position,
-        teamId: Number(clubId),
-      },
-    ]);
-  }
+  const squad = state.players.filter((p) => p.teamId === club.id);
 
   return (
-    <>
-      <Link to="/" className="btn-back">← Retour</Link>
-      <SectionCard title={currentClub.name} subtitle={chargement ? "Chargement des joueurs..." : `${filteredPlayers.length} joueurs`}>
-        {chargement && <p className="helper-text">Chargement des données API…</p>}
-        {erreur && <p className="helper-text error-text">Erreur : {erreur}</p>}
+    <div>
+      <button className="btn-back" onClick={() => navigate('/')}>
+        ← Retour aux clubs
+      </button>
 
-        {!chargement && !erreur && (
-          <div className="grid-cards">
-            {filteredPlayers.map((player) => (
-              <article key={player.id} className="card player-card">
-                <div className="player-visual">
-                  <span className="player-initials">{player.name.split(' ').slice(0,2).map((part) => part[0]).join('').toUpperCase()}</span>
-                  <span className="shirt-number">#{player.id}</span>
-                </div>
-                <div className="card-body">
-                  <h3>{player.name}</h3>
-                  <p className="player-role">{player.position ?? "Position non renseignée"}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </SectionCard>
+      <header className="club-header">
+        <img src={club.crest} alt={club.name} className="club-logo-large" />
+        <div>
+          <h1>{club.name}</h1>
+          <p>
+            {club.venue ? `🏟️ ${club.venue} • ` : ''}
+            {club.founded ? `Fondé en ${club.founded} • ` : ''}
+            🌍 {club.country}
+          </p>
+          {apiState.status === 'loading' && (
+            <span className="api-badge loading">🔄 Synchro API en cours...</span>
+          )}
+          {apiState.status === 'error' && (
+            <span className="api-badge error">⚠️ API hors-ligne (mode local actif)</span>
+          )}
+          {apiState.status === 'success' && (
+            <span className="api-badge success">✅ API synchronisée</span>
+          )}
+        </div>
+      </header>
 
-      <SectionCard title="Historique des matchs" subtitle="5 derniers matchs terminés">
-        {chargementMatchs && <p className="helper-text">Chargement des résultats…</p>}
-        {erreurMatchs && <p className="helper-text error-text">L’historique des matchs est indisponible pour le moment.</p>}
-        {!chargementMatchs && !erreurMatchs && derniersMatchs.length === 0 && (
-          <p className="helper-text">Aucun match terminé disponible pour cette équipe.</p>
-        )}
-        {!chargementMatchs && !erreurMatchs && derniersMatchs.length > 0 && (
-          <ol className="match-list">
-            {derniersMatchs.map((match) => {
-              const scoreDomicile = match.score.fullTime.home;
-              const scoreExterieur = match.score.fullTime.away;
-              const resultat = scoreDomicile === null || scoreExterieur === null
-                ? "inconnu"
-                : scoreDomicile === scoreExterieur
-                  ? "nul"
-                  : (scoreDomicile > scoreExterieur) === (match.homeTeam.id === Number(clubId))
-                    ? "victoire"
-                    : "défaite";
-              const nomDomicile = match.homeTeam.shortName ?? match.homeTeam.name;
-              const nomExterieur = match.awayTeam.shortName ?? match.awayTeam.name;
+      {/* Statistiques par poste */}
+      <TeamStats players={squad} />
 
-              return (
-                <li key={match.id} className={`match-row match-row--${resultat}`}>
-                  <div className="match-meta">
-                    <time dateTime={match.utcDate}>
-                      {new Intl.DateTimeFormat("fr-FR", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      }).format(new Date(match.utcDate))}
-                    </time>
-                    <span>{match.competition.name}</span>
-                  </div>
-                  <div className="match-scoreline">
-                    <span className="match-team-name">{nomDomicile}</span>
-                    <strong className="match-score">
-                      {scoreDomicile ?? "–"} - {scoreExterieur ?? "–"}
-                    </strong>
-                    <span className="match-team-name">{nomExterieur}</span>
-                  </div>
-                  <span className="match-result">
-                    {resultat === "inconnu" ? "Terminé" : resultat}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </SectionCard>
+      {/* Historique et derniers résultats des matchs */}
+      <ClubMatches clubId={club.id} />
 
-      <SectionCard title="Ajouter un joueur">
-        <PlayerForm onSubmit={handleAddPlayer} />
-      </SectionCard>
-    </>
+      {/* Effectif complet du club */}
+      <section>
+        <h2>Effectif ({squad.length} joueurs)</h2>
+        <Grid>
+          {squad.map((player) => (
+            <Card key={player.id} onClick={() => setSelectedPlayer(player)}>
+              <h4>
+                {player.name} {player.shirtNumber ? `#${player.shirtNumber}` : ''}
+              </h4>
+              <p className="sub-text">{player.position}</p>
+              <span className="badge">🌍 {player.nationality}</span>
+            </Card>
+          ))}
+        </Grid>
+      </section>
+
+      {/* Modale d'informations détaillées au clic sur un joueur */}
+      <PlayerModal
+        player={selectedPlayer}
+        onClose={() => setSelectedPlayer(null)}
+      />
+    </div>
   );
-}
+};
